@@ -154,6 +154,22 @@ app.post("/report", auth, async (req, res) => {
 });
 
 /* ============================
+   GET ALL REPORTS (admin)
+============================ */
+app.get("/reports", async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM reports ORDER BY timestamp DESC'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("GET REPORTS ERROR:", err);
+    res.status(500).json({ error: "DB error" });
+  }
+});
+
+
+/* ============================
    START SERVER
 ============================ */
 export default app;
