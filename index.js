@@ -39,7 +39,6 @@ app.post("/register", async (req, res) => {
   }
 
   try {
-    // check if email exists
     const check = await pool.query(
       "SELECT id FROM users WHERE email = $1",
       [email]
@@ -51,11 +50,10 @@ app.post("/register", async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
-    // ⭐⭐⭐ ΣΩΣΤΟ INSERT ΓΙΑ ΤΟ ΔΙΚΟ ΣΟΥ TABLE ⭐⭐⭐
     await pool.query(
-      `INSERT INTO users (email, created_at, role, username, password, community)
-       VALUES ($1, NOW(), $2, $3, $4, $5)`,
-      [email, "user", fullName, hashed, community]
+      `INSERT INTO users (email, created_at, role, username, password, community, fullname)
+       VALUES ($1, NOW(), $2, $3, $4, $5, $6)`,
+      [email, "user", fullName, hashed, community, fullName]
     );
 
     console.log("REGISTER SUCCESS:", email);
@@ -66,6 +64,7 @@ app.post("/register", async (req, res) => {
     res.status(500).json({ error: "DB error" });
   }
 });
+
 
 /* ============================
    LOGIN (username + password)
