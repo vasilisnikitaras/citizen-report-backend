@@ -10,9 +10,17 @@ import jwt from "jsonwebtoken";
 const { Pool } = pkg;
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: "https://citizen-report-frontend.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
