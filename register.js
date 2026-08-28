@@ -35,11 +35,14 @@ router.post("/register", async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
 
     // Insert user
+    const role = "citizen"; // ΚΛΕΙΔΩΜΑ ADMIN — κανένας δεν μπορεί να γίνει admin από frontend
+    
     await client.query(
       `INSERT INTO users (username, email, password, role, community, fullName)
        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [username, email, hash, "user", community, cleanFullName]
+      [username, email, hash, role, community, cleanFullName]
     );
+
 
     return res.json({ success: true, message: "Ο χρήστης δημιουργήθηκε!" });
 
