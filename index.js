@@ -12,11 +12,15 @@ const { Pool } = pkg;
 const app = express();
 
 app.use(cors({
-  origin: "https://citizen-report-frontend.vercel.app",
+  origin: [
+    "https://citizen-report-frontend.vercel.app",
+    "https://citizen-report-frontend-main.vercel.app"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
