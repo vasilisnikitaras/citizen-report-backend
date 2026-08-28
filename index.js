@@ -34,22 +34,29 @@ const pool = new Pool({
    REGISTER
 ============================ */
 app.post("/register", async (req, res) => {
-  const { fullName, email, community, password } = req.body;
+  const { fullName, email, username, community, password } = req.body;
 
-  console.log("REGISTER REQUEST:", { fullName, email, community });
-
-  if (!fullName || !email || !community || !password) {
+  if (!fullName || !email || !username || !community || !password) {
     return res.status(400).json({ error: "Όλα τα πεδία είναι υποχρεωτικά" });
   }
 
   try {
-    const check = await pool.query(
+    const checkEmail = await pool.query(
       "SELECT id FROM users WHERE email = $1",
       [email]
     );
 
-    if (check.rows.length > 0) {
+    if (checkEmail.rows.length > 0) {
       return res.status(400).json({ error: "Το email υπάρχει ήδη" });
+    }
+
+    const checkUser = await pool.query(
+      "SELECT id FROM users WHERE username = $1",
+      [username]
+    );
+
+    if (checkUser.rows.length > 0) {
+      return res.status(400).json({ error: "Το username υπάρχει ήδη" });
     }
 
     const hashed = await bcrypt.hash(password, 10);
@@ -57,10 +64,9 @@ app.post("/register", async (req, res) => {
     await pool.query(
       `INSERT INTO users (email, created_at, role, username, password, community, fullname)
        VALUES ($1, NOW(), $2, $3, $4, $5, $6)`,
-      [email, "user", fullName, hashed, community, fullName]
+      [email, "user", username, hashed, community, fullName]
     );
 
-    console.log("REGISTER SUCCESS:", email);
     res.json({ success: true });
 
   } catch (err) {
@@ -68,6 +74,7 @@ app.post("/register", async (req, res) => {
     res.status(500).json({ error: "DB error" });
   }
 });
+
 
 
 /* ============================
