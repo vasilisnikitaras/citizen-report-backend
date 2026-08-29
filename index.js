@@ -21,10 +21,8 @@ app.use(cors({
   credentials: true
 }));
 
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -74,8 +72,6 @@ app.post("/register", async (req, res) => {
     res.status(500).json({ error: "DB error" });
   }
 });
-
-
 
 /* ============================
    LOGIN (username + password)
@@ -145,17 +141,23 @@ function auth(req, res, next) {
 ============================ */
 app.post("/report", auth, async (req, res) => {
   const { type, description, location, timestamp } = req.body;
-  const user = req.user.username;
-
-  console.log("REPORT REQUEST:", { type, location, user });
+  const username = req.user.username;
 
   try {
-    await pool.query(
-      'INSERT INTO reports (type, description, location, timestamp, "user") VALUES ($1, $2, $3, $4, $5)',
-      [type, description, location, timestamp, user]
+    // Βρες την κοινότητα του χρήστη
+    const userData = await pool.query(
+      "SELECT community FROM users WHERE username = $1",
+      [username]
     );
 
-    console.log("REPORT SAVED");
+    const community = userData.rows[0].community;
+
+    await pool.query(
+      `INSERT INTO reports (type, description, location, timestamp, "user", community)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [type, description, location, timestamp, username, community]
+    );
+
     res.json({ success: true });
 
   } catch (err) {
@@ -165,23 +167,41 @@ app.post("/report", auth, async (req, res) => {
 });
 
 /* ============================
-   GET ALL REPORTS (admin)
+   GET REPORTS (admin + citizen filtering)
 ============================ */
-app.get("/reports", async (req, res) => {
+app.get("/reports", auth, async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM reports ORDER BY timestamp DESC'
+    const username = req.user.username;
+
+    const userResult = await pool.query(
+      "SELECT role, community FROM users WHERE username = $1",
+      [username]
     );
+
+    const user = userResult.rows[0];
+
+    let result;
+
+    if (user.role === "admin") {
+      result = await pool.query(
+        'SELECT * FROM reports ORDER BY timestamp DESC'
+      );
+    } else {
+      result = await pool.query(
+        'SELECT * FROM reports WHERE community = $1 ORDER BY timestamp DESC',
+        [user.community]
+      );
+    }
+
     res.json(result.rows);
+
   } catch (err) {
     console.error("GET REPORTS ERROR:", err);
     res.status(500).json({ error: "DB error" });
   }
 });
 
-
 /* ============================
    START SERVER
 ============================ */
 export default app;
-
